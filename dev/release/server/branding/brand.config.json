@@ -6,6 +6,32 @@
     "officialWebsite",
     "github"
   ],
+  "loginPage": {
+    "theme": "zhishu-workbench",
+    "backgroundAsset": {
+      "target": "BOOT-INF/classes/static/login-bg.ccffd4ea.png",
+      "source": "login-background.png"
+    },
+    "kicker": "ZHISHU DATA INTELLIGENCE",
+    "title": "智数数据智能平台",
+    "subtitle": "面向企业知识图谱、数据治理与智能问答的一体化工作台",
+    "highlights": [
+      {
+        "value": "KG",
+        "label": "知识建模"
+      },
+      {
+        "value": "Data",
+        "label": "数据治理"
+      },
+      {
+        "value": "AI",
+        "label": "智能问答"
+      }
+    ],
+    "formTitle": "登录工作台",
+    "formSubtitle": "使用管理员账号进入智数"
+  },
   "textReplacements": [
     {
       "from": "OpenSPG",
