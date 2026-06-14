@@ -67,6 +67,9 @@ LOGIN_PAGE_STYLE = r"""
   .layout-center-container {
     min-height: 100vh;
     box-sizing: border-box;
+    width: 100%;
+    max-width: 1540px;
+    margin: 0 auto;
     padding: 128px min(7vw, 112px) 64px;
     display: grid;
     grid-template-columns: minmax(360px, 1fr) 420px;

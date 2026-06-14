@@ -39,3 +39,5 @@ def test_patches_white_label_login_layout(tmp_path):
     assert "layout-title-text-left" not in login_chunk
     assert "OpenSPG" not in login_chunk
     assert background.startswith(b"\x89PNG\r\n\x1a\n")
+    assert "max-width: 1540px;" in login_chunk
+    assert "margin: 0 auto;" in login_chunk
