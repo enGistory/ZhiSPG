@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import re
 import shutil
 import tempfile
 import zipfile
@@ -9,6 +10,36 @@ from pathlib import Path
 
 
 TEXT_SUFFIXES = {".html", ".js", ".css", ".json"}
+HEADER_LINK_PATTERNS = {
+    "tutorial": [
+        (
+            re.compile(r"\(0,a\.jsx\)\(c\.default,\{\}\),"),
+            "",
+        ),
+    ],
+    "officialWebsite": [
+        (
+            re.compile(
+                r"\(0,a\.jsx\)\(s\.default,\{type:\"link\",onClick:\(\)=>\{"
+                r"window\.open\(\"https://spg\.openkg\.cn\",\"_blank\"\);\},"
+                r"children:i\.default\.get\(\{id:\"spg\.Header\.GlobalRightHeader\.OfficialWebsite\","
+                r"dm:\"\\u5B98\\u7F51\"\}\)\}\),"
+            ),
+            "",
+        ),
+    ],
+    "github": [
+        (
+            re.compile(
+                r",\(0,a\.jsx\)\(s\.default,\{type:\"link\",onClick:\(\)=>\{"
+                r"window\.open\(\"https://github\.com/[^\"]+/openspg\",\"_blank\"\);\},"
+                r"children:\(0,a\.jsx\)\(l\.Icon,\{className:\"header-icon\","
+                r"icon:\"ant-design:github-filled\"\}\)\}\)"
+            ),
+            "",
+        ),
+    ],
+}
 
 
 def upper_unicode_escapes(value):
@@ -105,14 +136,49 @@ def patch_text(data, replacements):
     return data, {}
 
 
+def normalize_header_links(config):
+    requested = config.get("hideRightHeaderLinks", [])
+    if requested is True:
+        return sorted(HEADER_LINK_PATTERNS)
+    if not requested:
+        return []
+    return list(requested)
+
+
+def patch_header_links(data, requested_links):
+    if not requested_links:
+        return data, {}
+
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return data, {}
+
+    counts = {}
+    for link_name in requested_links:
+        patterns = HEADER_LINK_PATTERNS.get(link_name)
+        if not patterns:
+            raise RuntimeError(f"Unknown right header link: {link_name}")
+
+        for pattern, replacement in patterns:
+            text, count = pattern.subn(replacement, text)
+            if count:
+                counts[link_name] = counts.get(link_name, 0) + count
+
+    if counts:
+        return text.encode("utf-8"), counts
+    return data, {}
+
+
 def patch_jar(jar_path, branding_dir, config):
     replacements = build_replacements(config)
+    hidden_links = normalize_header_links(config)
     asset_map = {
         path: (branding_dir / local_name).read_bytes()
         for path, local_name in config.get("assetReplacements", {}).items()
     }
 
-    summary = {"text": {}, "assets": []}
+    summary = {"text": {}, "assets": [], "headerLinks": {}}
     jar_path = jar_path.resolve()
     fd, temp_name = tempfile.mkstemp(suffix=".jar", prefix=jar_path.stem + "-patched-")
     os.close(fd)
@@ -135,6 +201,11 @@ def patch_jar(jar_path, branding_dir, config):
                     data, counts = patch_text(data, replacements)
                     for key, count in counts.items():
                         summary["text"][key] = summary["text"].get(key, 0) + count
+                    data, counts = patch_header_links(data, hidden_links)
+                    for key, count in counts.items():
+                        summary["headerLinks"][key] = (
+                            summary["headerLinks"].get(key, 0) + count
+                        )
 
                 target_zip.writestr(clone_info(info), data)
 
@@ -147,11 +218,15 @@ def patch_jar(jar_path, branding_dir, config):
     if missing_assets:
         raise RuntimeError(f"Asset targets not found in jar: {missing_assets}")
 
+    missing_links = sorted(set(hidden_links) - set(summary["headerLinks"]))
+    if missing_links and config.get("requireHeaderLinkPatches", True):
+        raise RuntimeError(f"Right header link targets not found in jar: {missing_links}")
+
     return summary
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Patch OpenSPG frontend branding inside a server jar.")
+    parser = argparse.ArgumentParser(description="Patch frontend branding inside a server jar.")
     parser.add_argument("--jar", required=True, type=Path)
     parser.add_argument("--branding-dir", required=True, type=Path)
     parser.add_argument("--config", default="brand.config.json")

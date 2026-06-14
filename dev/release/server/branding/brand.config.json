@@ -1,6 +1,11 @@
 {
   "brandName": "智数",
   "brandSlug": "zhishu-platform",
+  "hideRightHeaderLinks": [
+    "tutorial",
+    "officialWebsite",
+    "github"
+  ],
   "textReplacements": [
     {
       "from": "OpenSPG",
