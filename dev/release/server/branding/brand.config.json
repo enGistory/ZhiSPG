@@ -1,0 +1,35 @@
+{
+  "brandName": "智数",
+  "brandSlug": "zhishu-platform",
+  "textReplacements": [
+    {
+      "from": "OpenSPG",
+      "to": "智数"
+    },
+    {
+      "from": "open-semantic-graph",
+      "to": "zhishu-platform"
+    },
+    {
+      "from": "https://openspg.yuque.com/ndx6g9/docs/yu468a8g7adpg0ql",
+      "to": "#"
+    },
+    {
+      "from": "https://openspg.yuque.com",
+      "to": "#"
+    },
+    {
+      "from": "·语义增强可编辑图谱框架",
+      "to": "·企业级知识图谱平台"
+    },
+    {
+      "from": "新一代企业级知识图谱引擎，大模型与知识图谱双向增强",
+      "to": "企业级知识图谱与数据智能平台"
+    }
+  ],
+  "assetReplacements": {
+    "BOOT-INF/classes/static/favicon.png": "favicon.png",
+    "BOOT-INF/classes/static/logo.933b83d5.png": "logo.png",
+    "BOOT-INF/classes/static/logo-spg.0fb268ec.png": "logo.png"
+  }
+}

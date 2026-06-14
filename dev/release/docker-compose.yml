@@ -2,9 +2,10 @@ version: "3.7"
 services:
   server:
     restart: always
-    image: spg-registry.cn-hangzhou.cr.aliyuncs.com/spg/openspg-server:latest
+    image: openspg-server:local
     container_name: release-openspg-server
     ports:
+      - "80:8887"
       - "8887:8887"
     depends_on:
       - mysql
@@ -24,9 +25,14 @@ services:
       "arks-sofaboot-0.0.1-SNAPSHOT-executable.jar",
       '--server.repository.impl.jdbc.host=mysql',
       '--server.repository.impl.jdbc.password=openspg',
-      '--builder.model.execute.num=20',
+      '--builder.model.execute.num=4',
+      '--schema.uri=http://146.56.205.157',
       '--cloudext.graphstore.url=neo4j://release-openspg-neo4j:7687?user=neo4j&password=neo4j@openspg&database=neo4j',
-      '--cloudext.searchengine.url=neo4j://release-openspg-neo4j:7687?user=neo4j&password=neo4j@openspg&database=neo4j'
+      '--cloudext.searchengine.url=neo4j://release-openspg-neo4j:7687?user=neo4j&password=neo4j@openspg&database=neo4j',
+      '--cloudext.objectstorage.url=minio://release-openspg-minio:9000?accessKey=minio&secretKey=minio@openspg&scheme=http',
+      '--cloudext.objectstorage.show.url=http://146.56.205.157:9000',
+      '--objectStorage.builder.bucketName=openspg-builder',
+      '--objectStorage.upload.bucketName=openspg-upload'
     ]
 
   mysql:
@@ -35,13 +41,15 @@ services:
     container_name: release-openspg-mysql
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - /opt/openspg/data/mysql:/var/lib/mysql
+      - /opt/openspg/mysql/sql/99-fix-default-login-password.sql:/docker-entrypoint-initdb.d/99-fix-default-login-password.sql:ro
     environment:
       TZ: Asia/Shanghai
       LANG: C.UTF-8
       MYSQL_ROOT_PASSWORD: openspg
       MYSQL_DATABASE: openspg
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     command: [
       '--character-set-server=utf8mb4',
       '--collation-server=utf8mb4_general_ci'
@@ -52,8 +60,8 @@ services:
     image: spg-registry.cn-hangzhou.cr.aliyuncs.com/spg/openspg-neo4j:latest
     container_name: release-openspg-neo4j
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     environment:
       - TZ=Asia/Shanghai
       - NEO4J_AUTH=neo4j/neo4j@openspg
@@ -67,7 +75,8 @@ services:
       - NEO4J_dbms_security_procedures_allowlist=*
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - $HOME/dozerdb/logs:/logs
+      - /opt/openspg/data/neo4j/data:/data
+      - /opt/openspg/data/neo4j/logs:/logs
 
   minio:
     image: spg-registry.cn-hangzhou.cr.aliyuncs.com/spg/openspg-minio:latest
@@ -80,6 +89,7 @@ services:
       TZ: Asia/Shanghai
     ports:
       - 9000:9000
-      - 9001:9001
+      - 127.0.0.1:9001:9001
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - /opt/openspg/data/minio:/data
